@@ -17,7 +17,7 @@ def generate_ar(a:np.array, steps:int, paths:int, start=0, dist='normal',  error
     start_array = np.full_like(data[0], fill_value=start)      # Vector corresponding to first row, it's value is associated with start value
     data = np.insert(data, 0, start_array, axis=0)[:steps,:]   # Insert the start array
 
-    # Matrix of errors
+    # Matrix of errors #
     random_generator = np.random.default_rng()
     # Normal
     if dist == 'normal':
