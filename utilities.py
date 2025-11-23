@@ -75,16 +75,14 @@ def plot_acf(acf_summary: df, steps: int) -> None:
 
     data = acf_summary.to_numpy()
     paths = data.shape[1]
-    p = acf_summary.shape[0] - 1
-
-    lags = np.arange(p + 1)
+    lags = np.arange(acf_summary.shape[0])
     conf = 1.0 / np.sqrt(steps)
 
     plt.figure(figsize=(8, 5))
 
     # Plot ACF for each path
-    for i in range(paths):
-        plt.plot(lags, acf_summary[:, i], alpha=0.7)
+    for i in range(0,paths):
+        plt.plot(lags, data[:, i], alpha=0.7)
 
     # Confidence intervals around 0
     plt.axhline( conf, color='red', linewidth=1)
@@ -117,4 +115,29 @@ def compute_moments(data: np.array) -> df:
 
         moments[:,i] = np.array([mu, var, skewness, kurtosis]).T
 
-    moments = df(moments).rename(index={0: 'mean', 1: 'variance', 2: 'skewness', 3: 'kurtosis'})
+    return df(moments).rename(index={0: 'mean', 1: 'variance', 2: 'skewness', 3: 'kurtosis'})
+
+
+
+def qq_plot(data, dist='normal', ncols=3):
+
+    """
+
+    Plots Q-Q plots for each Path
+
+    """
+
+    _, paths = data.shape
+
+    nrows = int(np.ceil(paths / ncols))
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, figsize=(3*ncols, 3*nrows))
+    axes = axes.flatten()
+
+    for i in range(paths):
+        if dist == 'normal':
+            stats.probplot(data[:, i], dist="norm", plot=axes[i])
+        axes[i].set_title(f"Q-Q Plot Path {i}")
+        axes[i].grid(True)
+
+    plt.tight_layout()
+    plt.show()

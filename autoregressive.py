@@ -62,6 +62,9 @@ class AutoRegressive:
 
     def plot_paths(self, data=None, size=(11,3)):
 
+        if data is None:
+            data = self.data
+
         plt.figure(figsize=size)
         plt.plot(data)
         plt.title(f'AR({self.p}) processes')
@@ -154,7 +157,7 @@ class AutoRegressive:
 
 
 
-    def study_residuals(self, p: int, display_results = True, data = None) -> tuple[df, df, df, df]:
+    def study_residuals(self, display_results = True) -> tuple[df, df, df, df]:
 
         '''
         
@@ -164,19 +167,17 @@ class AutoRegressive:
         - Autocorrelation Function
         - Descriptive statistics
 
-        Everything iterated for every path
-
         '''
 
-
-
-        self.jb_summary = self.jb_test(data=data)
-        self.acf = self.auto_correlation_function(p=p, data=data)
+        self.residuals_stats = df(self.epsilon).describe()
+        self.moments = ut.compute_moments(self.epsilon)
+        self.jb_summary = ut.jb_test(self.epsilon)
+        self.acf = ut.auto_correlation_function(self.epsilon, 20)
 
         if display_results:
             print("\n")
             print("="*100)
-            print("STUDYING ERRORS")
+            print("RESIDUALS DIAGNISTIC")
             print("="*100)
             print("\n")
 
@@ -203,8 +204,15 @@ class AutoRegressive:
             print("AUTOCORRELATION FUNCTION (ACF)")
             print("="*50)
             display(self.acf)
+            ut.plot_acf(self.acf, 20)
 
-        return self.moments, self.jb_summary, self.acf, df(self.epsilon).describe()
+            print("\n")
+            print("="*50)
+            print("QQ Plots")
+            print("="*50)
+            ut.qq_plot(self.epsilon)         
+
+        return 
         
 
 
@@ -213,12 +221,14 @@ class AutoRegressive:
 
 ### For testing and debugging
 if __name__ == "__main__":
-    model = AutoRegressive(steps=1_000, paths=10, a=np.array([0.2, 1]), start=0)
-    data = model.generate()
-    model.plot_paths(data)
-    coefficients = model.fit_ar()
-    print(coefficients)           # They should match (on average) the given a
-    eps, _ = model.get_errors()   # should be N(0,1) in this example
-    moments, jb, acf, stat = model.study_errors(10)
 
-    model.plot_qq_2d(model.epsilon, ncols=4)
+    model = AutoRegressive(steps=1_000, paths=6, a=np.array([0.2, 0.3, 0.2]), start=0)
+    data = model.generate()
+    model.plot_paths()
+
+    coefficients = model.fit_ar()
+    print(coefficients)              # They should match (on average) the given a
+ 
+    eps, eta = model.get_residuals()
+    model.study_residuals()
+
