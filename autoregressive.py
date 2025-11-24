@@ -70,6 +70,16 @@ class AutoRegressive:
         plt.title(f'AR({self.p}) processes')
         plt.grid(True)
         plt.show()
+    
+    
+
+    def get_integrated_volatility(self, data=None):
+
+        if data is None:
+            data = self.data
+        
+        self.int_vol = ut.integrated_volatility(data)
+        return self.int_vol
 
 
 

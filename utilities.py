@@ -1,12 +1,8 @@
 import numpy as np
 import pandas as pd
 from pandas import DataFrame as df
-import matplotlib.pyplot as plt # TODO: maybe plotly looks better
-from tqdm import trange
+import matplotlib.pyplot as plt
 import scipy.stats as stats
-from IPython.display import display
-
-
 
 def jb_test(data: np.array) -> df:
 
@@ -97,9 +93,17 @@ def plot_acf(acf_summary: df, steps: int) -> None:
     plt.tight_layout()
     plt.show()
 
+    return
+
 
 
 def compute_moments(data: np.array) -> df:
+
+    '''
+    
+    Gives a df with the first fourth moments
+    
+    '''
 
     paths = data.shape[1]
     moments = np.zeros((4, paths))
@@ -119,7 +123,7 @@ def compute_moments(data: np.array) -> df:
 
 
 
-def qq_plot(data, dist='normal', ncols=3):
+def qq_plot(data: np.array, dist='normal', ncols=3) -> None:
 
     """
 
@@ -141,3 +145,27 @@ def qq_plot(data, dist='normal', ncols=3):
 
     plt.tight_layout()
     plt.show()
+
+    return
+
+
+
+def integrated_volatility(data: np.array) -> np.array:
+    vol = np.sum(data ** 2, axis = 0).reshape(1,-1)   # (1 x paths)
+    return vol
+
+
+
+
+
+### For testing and debugging
+if __name__ == "__main__":
+
+    import autoregressive as ar
+
+    model = ar.AutoRegressive(steps=1_000, paths=6, a=np.array([0.2, 0.3, 0.2]), start=0)
+    data = model.generate()
+
+    vol = integrated_volatility(data)
+    print(vol)
+
