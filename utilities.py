@@ -127,7 +127,7 @@ def qq_plot(data: np.array, dist='normal', ncols=3) -> None:
 
     """
 
-    Plots Q-Q plots for each Path
+    Plots Q-Q plot for each Path
 
     """
 
@@ -150,9 +150,14 @@ def qq_plot(data: np.array, dist='normal', ncols=3) -> None:
 
 
 
-def integrated_volatility(data: np.array) -> np.array:
-    vol = np.sum(data ** 2, axis = 0).reshape(1,-1)   # (1 x paths)
-    return vol
+
+
+
+
+
+
+
+
 
 
 
@@ -165,7 +170,3 @@ if __name__ == "__main__":
 
     model = ar.AutoRegressive(steps=1_000, paths=6, a=np.array([0.2, 0.3, 0.2]), start=0)
     data = model.generate()
-
-    vol = integrated_volatility(data)
-    print(vol)
-

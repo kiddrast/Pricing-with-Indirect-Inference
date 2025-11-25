@@ -7,7 +7,7 @@ import scipy.stats as stats
 from IPython.display import display
 import utilities as ut
 
-class AutoRegressive:
+class AutoRegressive():
 
     def __init__(self, steps: int, paths: int, a=np.array, start=0, dist='normal', error_var=1, df=None, wald_mean=1):
 
@@ -57,10 +57,40 @@ class AutoRegressive:
 
         self.data: np.array = data
         return self.data
+    
+
+
+    def prices_to_log_returns(self, data = None) -> np.array:
+
+        '''
+        
+        Trasforms the prices into log returns. It must be provided of strictly positive data.
+        
+        '''
+
+        if data is None:
+            data = self.data
+
+        return np.diff(np.log(data))
+    
+
+
+    def returns_to_log_returns(self, data = None) -> np.array:
+
+        '''
+        
+        Trasforms the simple returns into log returns. It must be provided of strictly positive data (Prices)
+        
+        '''
+
+        if data is None:
+            data = self.data
+
+        return np.log(data)
 
 
 
-    def plot_paths(self, data=None, size=(11,3)):
+    def plot_paths(self, data=None, size=(11,3)) -> None:
 
         if data is None:
             data = self.data
@@ -71,16 +101,6 @@ class AutoRegressive:
         plt.grid(True)
         plt.show()
     
-    
-
-    def get_integrated_volatility(self, data=None):
-
-        if data is None:
-            data = self.data
-        
-        self.int_vol = ut.integrated_volatility(data)
-        return self.int_vol
-
 
 
     def fit_ar(self, p=None, data=None, method='ols') -> np.array:  
@@ -167,7 +187,7 @@ class AutoRegressive:
 
 
 
-    def study_residuals(self, display_results = True) -> tuple[df, df, df, df]:
+    def study_residuals(self, display_results: bool = True) -> None:
 
         '''
         
@@ -232,7 +252,7 @@ class AutoRegressive:
 ### For testing and debugging
 if __name__ == "__main__":
 
-    model = AutoRegressive(steps=1_000, paths=6, a=np.array([0.2, 0.3, 0.2]), start=0)
+    model = AutoRegressive(steps=1_000, paths=6, a=np.array([0.2, 0.4]), start=100)
     data = model.generate()
     model.plot_paths()
 
