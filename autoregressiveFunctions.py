@@ -61,6 +61,25 @@ def generate_ar(steps: int, paths: int, a=np.ndarray, start=0, dist='normal', er
 
 
 
+def iterate_simulations(steps_list: list, a: np.ndarray, paths=1, error_var=1) -> dict:
+
+    '''
+    
+    Returns a dictionary with elements of steps_list as keys and and np.ndarray of size (steps x paths)
+    autoregressive processes. In other words iterates generate_ar() to many #steps
+
+    '''
+
+    simulations = {steps: None for steps in steps_list}
+
+    for steps in steps_list:
+        sim = generate_ar(steps=steps, paths=paths, a=a, dist='normal', error_var=error_var, degree_f=None, wald_mean=None, disable_progress=True)
+        simulations[steps] = sim
+    
+    return simulations
+
+
+
 def characteristic_poly_roots(a, show_plot=True):
 
     '''
