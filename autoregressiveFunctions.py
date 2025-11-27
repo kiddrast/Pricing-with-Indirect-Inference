@@ -26,7 +26,7 @@ def generate_errors(data: np.ndarray, dist: str, error_var: float, degree_f: flo
 
 
 
-def generate_ar(steps: int, paths: int, a=np.ndarray, start=0, dist='normal', error_var=1, degree_f=None, wald_mean=None) -> np.ndarray:
+def generate_ar(steps: int, paths: int, a=np.ndarray, start=0, dist='normal', error_var=1, degree_f=None, wald_mean=None, disable_progress=False) -> np.ndarray:
 
     '''
 
@@ -51,12 +51,40 @@ def generate_ar(steps: int, paths: int, a=np.ndarray, start=0, dist='normal', er
     a = a[1:][::-1].reshape(1, p)    #(1xp)
     
     # Fill data
-    for i in trange(p, steps):
+    for i in trange(p, steps, disable=disable_progress):
         data[i,:] = (a_0 + a @ data[i-p:i,:] + epsilon[i,:]).ravel() # (paths,) , before .ravel() the shape is (1xpaths)
-        
-    print(f'{paths} different AR({p}) processes of {steps - p + 2} steps have been generated with increments following {dist} distribution') 
+    
+    if not disable_progress:
+        print(f'{paths} different AR({p}) processes of {steps - p + 2} steps have been generated with increments following {dist} distribution') 
 
     return data
+
+
+
+def characteristic_poly_roots(a, show_plot=True):
+
+    '''
+
+    Plots and returns the roots of the characteristic polynomial of an AR(p) process, a must be an array of coefficients: [a0, a1, a2, ..., ap]
+
+    '''
+
+    poly = np.concatenate([-a[:0:-1], np.array([1])])
+    roots = np.roots(poly)
+
+    if show_plot:
+        # Scatter plot 
+        plt.scatter(roots.real, roots.imag, marker='x')
+        # Unitary circle
+        circle = plt.Circle((0,0), 1, fill=False, color='gray')
+        plt.gca().add_patch(circle)
+        plt.axhline(0, color='black')
+        plt.axvline(0, color='black')
+        plt.gca().set_aspect('equal')
+        plt.title("Characteristic Polynomial Roots")
+        plt.show()
+    
+    return roots
 
 
 
@@ -112,6 +140,9 @@ def fit_ar_ML(y_t: np.array, p: int, dist='normal') -> np.array:
     return res
 
     
+
+
+
 
 
 if __name__ == '__main__':
@@ -177,3 +208,11 @@ def get_residuals(data: np.ndarray, coefficients: np.ndarray, p: int, std_residu
     else:
         return eta     # residuals
     
+
+
+def plot_paths(data=None, size=(11,3),  title='AR processes'):
+    plt.figure(figsize=size)
+    plt.plot(data)
+    plt.title(title)
+    plt.grid(True)
+    plt.show()

@@ -90,7 +90,7 @@ class VolatilityMeasures():
 ### For testing and debugging
 if __name__ == "__main__":
 
-    import autoregressive as ar
+    import autoregressive_oop as ar
 
     model = ar.AutoRegressive(steps=1_000, paths=6, a=np.array([0.2, 1]), start=100)
     data = model.generate()

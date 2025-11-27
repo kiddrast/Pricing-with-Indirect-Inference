@@ -166,7 +166,7 @@ def qq_plot(data: np.array, dist='normal', ncols=3) -> None:
 ### For testing and debugging
 if __name__ == "__main__":
 
-    import autoregressive as ar
+    import autoregressive_oop as ar
 
     model = ar.AutoRegressive(steps=1_000, paths=6, a=np.array([0.2, 0.3, 0.2]), start=0)
     data = model.generate()
