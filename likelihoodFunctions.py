@@ -13,11 +13,14 @@ def conditional_mean(y_t: np.ndarray, a: np.ndarray) -> np.ndarray:
 
     T = y_t.size
     p = a.size - 1
-    mu_t = np.empty_like(y_t, dtype=float) 
+    mu_t = np.zeros_like(y_t) 
     mu_t[:p] = y_t[:p] # In this way the first p values of u_t are not null and are equal to the observed ones
 
+    a_0 = a[0]
+    a = a[1:][::-1].reshape(1,p) # (1xp)
+
     for i in range(p, T):                 
-        mu_t[i] = a[0] + a[1:] @ y_t[i-1:i-p-1:-1]  # a1*y_{i-1} + ... + ap*y_{i-p} 
+        mu_t[i] = (a_0 + a @ y_t[i-p:i,:]).ravel()  
         
     return mu_t
 
@@ -119,7 +122,7 @@ def neg_loglik_t_ar(y_t: np.ndarray, a: np.ndarray) -> float:
 
     '''
     
-    Negative LogLikilihood for fitting an AR(p) process with wald innovations. 
+    Negative LogLikelihood for fitting an AR(p) process with wald innovations. 
     a is an array of parameters such that: [a0, a1, ... ap, lambda].
     
     '''
@@ -134,3 +137,14 @@ def neg_loglik_t_ar(y_t: np.ndarray, a: np.ndarray) -> float:
 
 
 
+
+
+
+
+# TESTING AND DEBUGGING
+if __name__ == '__main__':
+    from functions import generate_ar as gar
+    y_t = gar(steps=100, paths=1, a=np.array([0.2, 0.9, 0.1]), start=55, dist='normal')
+
+    mu_t = conditional_mean(y_t=y_t, a=np.array([0.2, 0.9, 0.1]))
+    print(mu_t)
