@@ -41,10 +41,10 @@ def loglik_normal(y_t: np.ndarray, mu, sigma_2) -> float:
     term_2 = - 0.5 * T * np.log(sigma_2)
     term_3 = - ((y_t - mu)**2) / (2 * sigma_2)
 
-    return term_1 + term_2 + np.sum(term_3, axis=0)
+    return term_1 + term_2 + np.sum(term_3, axis=0) 
 
 
-def neg_loglik_normal_ar(y_t: np.ndarray, a: np.ndarray) -> float:
+def neg_loglik_normal_ar(a: np.ndarray, y_t: np.ndarray) -> float:
 
     '''
     
@@ -55,8 +55,7 @@ def neg_loglik_normal_ar(y_t: np.ndarray, a: np.ndarray) -> float:
 
     p = a.size - 2
     sigma_2 = a[-1]
-    a = a[:-1]
-    mu_t = conditional_mean(y_t, a)
+    mu_t = conditional_mean(y_t, a[:-1])
 
     return -loglik_normal(y_t[p:], mu_t[p:], sigma_2)
 
@@ -78,10 +77,10 @@ def loglik_t(y_t: np.ndarray, mu, sigma_2, nu) -> float:
     term_3 = - 0.5 * T * np.log(sigma_2)
     term_4 = - ((nu + 1)/2) * np.log(1 + (((y_t - mu)**2) / (sigma_2 * nu)))
 
-    return term_1 + term_2 + term_3 + term_4 + np.sum(term_4, axis=0)
+    return term_1 + term_2 + term_3 + np.sum(term_4, axis=0)
 
 
-def neg_loglik_t_ar(y_t: np.ndarray, a: np.ndarray) -> float:
+def neg_loglik_t_ar(a: np.ndarray, y_t: np.ndarray) -> float:
 
     '''
     
@@ -93,8 +92,7 @@ def neg_loglik_t_ar(y_t: np.ndarray, a: np.ndarray) -> float:
     p = a.size - 3
     nu = a[-1]
     sigma_2 = a[-2]
-    a = a[:-2]
-    mu_t = conditional_mean(y_t, a)
+    mu_t = conditional_mean(y_t, a[:-2])
 
     return -loglik_t(y_t[p:], mu_t[p:], sigma_2, nu)
 
@@ -118,7 +116,7 @@ def loglik_wald(y_t, mu, lam) -> float:
     return np.sum(pointwise_loglik, axis=0) 
 
 
-def neg_loglik_t_ar(y_t: np.ndarray, a: np.ndarray) -> float:
+def neg_loglik_wald_ar(a: np.ndarray, y_t: np.ndarray) -> float:
 
     '''
     
@@ -129,8 +127,7 @@ def neg_loglik_t_ar(y_t: np.ndarray, a: np.ndarray) -> float:
 
     p = a.size - 2
     lam = a[-1]
-    a = a[:-1]
-    mu_t = conditional_mean(y_t, a)
+    mu_t = conditional_mean(y_t, a[:-1])
 
     return -loglik_wald(y_t[p:], mu_t[p:], lam)
 

@@ -6,11 +6,11 @@ from tqdm import trange
 import scipy.stats as stats
 from IPython.display import display
 
-from likelihoodFunctions import neg_loglik_normal_ar, neg_loglik_t_ar
+from likelihoodFunctions import neg_loglik_normal_ar, neg_loglik_t_ar, neg_loglik_wald_ar
 from scipy.optimize import minimize 
 
 
-def generate_errors(data: np.ndarray, dist: str, error_var: float, degree_f: float, wald_mean: float, seed=42) -> np.ndarray:
+def generate_errors(data: np.ndarray, dist: str, error_var: float, degree_f: float, wald_mean: float, wald_scale: float, seed=42) -> np.ndarray:
     random_generator = np.random.default_rng(seed=seed)
     if dist == 'normal':
         epsilon = random_generator.normal(loc=0, scale=np.sqrt(error_var), size=data.shape)
@@ -20,13 +20,13 @@ def generate_errors(data: np.ndarray, dist: str, error_var: float, degree_f: flo
         if wald_mean <=0:
             raise('The mean of a wald distribution must be greater than 0!')
         else:
-            epsilon = random_generator.wald(error_var, error_var, size=data.shape)
+            epsilon = random_generator.wald(wald_mean, wald_scale, size=data.shape)
     
     return epsilon
 
 
 
-def generate_ar(steps: int, paths: int, a=np.ndarray, start=0, dist='normal', error_var=1, degree_f=None, wald_mean=None, disable_progress=False) -> np.ndarray:
+def generate_ar(steps: int, paths: int, a=np.ndarray, start=0, dist='normal', error_var=1, degree_f=None, wald_mean=None, wald_scale=None, disable_progress=False) -> np.ndarray:
 
     '''
 
@@ -80,7 +80,7 @@ def iterate_simulations(steps_list: list, a: np.ndarray, paths=1, error_var=1) -
 
 
 
-def characteristic_poly_roots(a, show_plot=True):
+def characteristic_poly_roots(a: np.ndarray, show_plot=True) -> np.ndarray:
 
     '''
 
@@ -146,57 +146,44 @@ def fit_ar_ols(data: np.ndarray, p: int) -> np.ndarray:
 
 
 
-
-
-
-#################################################################################################################################### Work in progress
-
-
-
-
-def fit_ar_ML_normal(y_t: np.array, p: int, dist='normal') -> np.array:
+def fit_ar_ML(y_t: np.ndarray, p: int, dist='normal', method='L-BFGS-B'):
 
     init_a0 = np.mean(y_t)
-    init_coeff = np.array([0.8])
+    init_coeff = np.zeros(shape=(p))
     init_sigma_2 = np.var(y_t)
-    x0 = np.concatenate([[init_a0], init_coeff, [init_sigma_2]])
 
-    bounds = [(None,None)] * (p+1) + [(0.1,None)] # No bounds for coeff + Bounds ( >0) for variance
+    if dist == 'normal':
 
-    res = minimize(fun=neg_loglik_normal_ar, x0=x0, args=(y_t,), method='L-BFGS-B', bounds=bounds)
+        x0 = np.concatenate([[init_a0], init_coeff, [init_sigma_2]])
+        bounds = [(None,None)] * (p+1) + [(0.01,None)] # No bounds for coeff + Bounds ( >0) for variance
+        res = minimize(fun=neg_loglik_normal_ar, x0=x0, args=(y_t,), method=method, bounds=bounds)
+    
+    elif dist == 't':
+
+        init_nu = 6.5
+        x0 = np.concatenate([[init_a0], init_coeff, [init_sigma_2], [init_nu]])
+        bounds = [(None,None)] * (p+1) + [(0.01,None)] + [(0.01,None)] # No bounds for coeff + Bounds ( >0) for variance and nu
+        res = minimize(fun=neg_loglik_t_ar, x0=x0, args=(y_t,), method=method, bounds=bounds)
+    
+    elif dist == 'wald':
+
+        init_lambda = (init_a0**3) / init_sigma_2
+        x0 = np.concatenate([[init_a0], init_coeff, [init_lambda]])
+        bounds = [(None,None)] * (p+1) + [(0.01,None)] # No bounds for coeff + Bounds ( >0) for lambda
+        res = minimize(fun=neg_loglik_wald_ar, x0=x0, args=(y_t,), method=method, bounds=bounds)
+    
     return res
 
 
-def fit_ar_ML_t(y_t: np.array, p: int, dist='t') -> np.array:
 
-    init_a0 = np.mean(y_t)
-    init_coeff = np.array([0.8])
-    init_sigma_2 = np.var(y_t)
-    init_nu = 6.5
-    x0 = np.concatenate([[init_a0], init_coeff, [init_sigma_2], [init_nu]])
 
-    bounds = [(None,None)] * (p+1) + [(0.1,None)] + [(0.1,None)] # No bounds for coeff + Bounds ( >0) for variance and nu
-
-    res = minimize(fun=neg_loglik_t_ar, x0=x0, args=(y_t,), method='Nelder-Mead', bounds=bounds)
-
-    return res
 
 
 
 if __name__ == '__main__':
-    data = generate_ar(steps=10_000, paths=1, a=np.array([0, 0.9]), start=0, dist='t', degree_f=7)
+    data = generate_ar(steps=100000, paths=1, a=np.array([0.1, -0.5, 0.3, 0.4, -0.2]), start=0, dist='wald', degree_f=7, wald_mean=1)
 
-    print(fit_ar_ML_normal(y_t=data, p=1))
-
-
-
-
-
-
-###################################################################################################################################
-
-
-
+    print(fit_ar_ML(y_t=data, p=4, dist='wald'))
 
 
 
