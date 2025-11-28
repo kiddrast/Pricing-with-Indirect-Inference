@@ -8,7 +8,7 @@ from IPython.display import display
 
 class AutoRegressive:
 
-    def __init__(self, steps: int, paths: int, a=np.array, start=0, dist='normal', error_var=1, df=None, wald_mean=1):
+    def __init__(self, steps: int, paths: int, a=np.array, start=0, dist='normal', error_var=1, df=None):
 
         self.steps     = steps
         self.paths     = paths
@@ -19,7 +19,6 @@ class AutoRegressive:
         self.dist      = dist
         self.error_var = error_var
         self.df        = df         # Degree of freedom of t
-        self.wald_mean = wald_mean  # Mean of inverse normal
 
 
 
@@ -43,10 +42,6 @@ class AutoRegressive:
             epsilon = random_generator.normal(loc=0, scale=np.sqrt(self.error_var), size=data.shape)
         elif self.dist == 't':
             epsilon = random_generator.standard_t(self.df, size=data.shape)
-        elif self.dist == 'wald':
-            if self.wald_mean <=0:
-                raise('The mean of a wald distribution must be greater than 0!')
-            epsilon = random_generator.wald(self.error_var, self.error_var, size=data.shape)
 
         # Fill data
         for i in trange(self.p, self.steps):
@@ -72,15 +67,13 @@ class AutoRegressive:
 
 
 
-    def fit_ar(self, p=None, data=None, method='ols') -> np.array:  
+    def fit_ar_ols(self, p=None, data=None) -> np.array:  
         
         '''
 
         If the method si ols it gives an array of dimension len(self.a) x paths of coefficients
         By default data is the one generated through specific function, however if the function fit_ar() has been provided by other data, it is possible to pass it.
         (same for p)
-
-        TODO: add Maximum likelihood method
 
         '''
         

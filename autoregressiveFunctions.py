@@ -10,23 +10,18 @@ from likelihoodFunctions import neg_loglik_normal_ar, neg_loglik_t_ar, neg_logli
 from scipy.optimize import minimize 
 
 
-def generate_errors(data: np.ndarray, dist: str, error_var: float, degree_f: float, wald_mean: float, wald_scale: float, seed=42) -> np.ndarray:
+
+def generate_errors(data: np.ndarray, dist: str, error_var: float, degree_f: float, seed=42) -> np.ndarray:
     random_generator = np.random.default_rng(seed=seed)
     if dist == 'normal':
         epsilon = random_generator.normal(loc=0, scale=np.sqrt(error_var), size=data.shape)
     elif dist == 't':
         epsilon = random_generator.standard_t(degree_f, size=data.shape)
-    elif dist == 'wald':
-        if wald_mean <=0:
-            raise('The mean of a wald distribution must be greater than 0!')
-        else:
-            epsilon = random_generator.wald(wald_mean, wald_scale, size=data.shape)
-    
     return epsilon
 
 
 
-def generate_ar(steps: int, paths: int, a=np.ndarray, start=0, dist='normal', error_var=1, degree_f=None, wald_mean=None, wald_scale=None, disable_progress=False) -> np.ndarray:
+def generate_ar(steps: int, paths: int, a=np.ndarray, start=0, dist='normal', error_var=1, degree_f=None, disable_progress=False) -> np.ndarray:
 
     '''
 
@@ -73,7 +68,7 @@ def iterate_simulations(steps_list: list, a: np.ndarray, paths=1, error_var=1) -
     simulations = {steps: None for steps in steps_list}
 
     for steps in steps_list:
-        sim = generate_ar(steps=steps, paths=paths, a=a, dist='normal', error_var=error_var, degree_f=None, wald_mean=None, disable_progress=True)
+        sim = generate_ar(steps=steps, paths=paths, a=a, dist='normal', error_var=error_var, degree_f=None, disable_progress=True)
         simulations[steps] = sim
     
     return simulations
@@ -165,30 +160,7 @@ def fit_ar_ML(y_t: np.ndarray, p: int, dist='normal', method='L-BFGS-B'):
         bounds = [(None,None)] * (p+1) + [(0.01,None)] + [(0.01,None)] # No bounds for coeff + Bounds ( >0) for variance and nu
         res = minimize(fun=neg_loglik_t_ar, x0=x0, args=(y_t,), method=method, bounds=bounds)
     
-    elif dist == 'wald':
-
-        init_lambda = (init_a0**3) / init_sigma_2
-        x0 = np.concatenate([[init_a0], init_coeff, [init_lambda]])
-        bounds = [(None,None)] * (p+1) + [(0.01,None)] # No bounds for coeff + Bounds ( >0) for lambda
-        res = minimize(fun=neg_loglik_wald_ar, x0=x0, args=(y_t,), method=method, bounds=bounds)
-    
     return res
-
-
-
-
-
-
-
-if __name__ == '__main__':
-    data = generate_ar(steps=100000, paths=1, a=np.array([0.1, -0.5, 0.3, 0.4, -0.2]), start=0, dist='wald', degree_f=7, wald_mean=1)
-
-    print(fit_ar_ML(y_t=data, p=4, dist='wald'))
-
-
-
-
-
 
 
 
@@ -235,3 +207,17 @@ def plot_paths(data=None, size=(11,3),  title='AR processes'):
     plt.title(title)
     plt.grid(True)
     plt.show()
+
+
+
+
+
+
+
+
+### test and debug
+
+if __name__ == '__main__':
+    data = generate_ar(steps=100000, paths=1, a=np.array([0.1, -0.5, 0.3, 0.4, -0.2]), start=0, dist='t', degree_f=7)
+
+    print(fit_ar_ML(y_t=data, p=4, dist='t'))
