@@ -20,7 +20,7 @@ def conditional_mean(y_t: np.ndarray, a: np.ndarray) -> np.ndarray:
     a = a[1:][::-1].reshape(1,p) # (1xp)
 
     for i in range(p, T):                 
-        mu_t[i] = (a_0 + a @ y_t[i-p:i,:]).ravel()  
+        mu_t[i] = (a_0 + a @ y_t[i-p:i]).ravel()  
         
     return mu_t
 
@@ -50,6 +50,7 @@ def neg_loglik_normal_ar(a: np.ndarray, y_t: np.ndarray) -> float:
     
     Negative Log-Likelihood for fitting an AR(p) process with normal innovations. 
     a must be an array of parameters such that: [a0, a1, ..., ap, sigma^2].
+    y_t must be of shape (steps x 1)
     
     '''
 
@@ -58,6 +59,25 @@ def neg_loglik_normal_ar(a: np.ndarray, y_t: np.ndarray) -> float:
     mu_t = conditional_mean(y_t, a[:-1])
 
     return -loglik_normal(y_t[p:], mu_t[p:], sigma_2)
+
+
+
+def multi_col_neg_loglik_normal_ar(a: np.ndarray, y_t: np.ndarray) -> float:
+
+    '''
+    
+    Returns the sum of the log likelihood computed for each column
+    
+    '''
+
+    _, col = y_t.shape
+
+    liks = np.empty(shape=col)
+
+    for i in range(0, col):
+        liks[0] = neg_loglik_normal_ar(a, y_t[:,i])
+    
+    return np.sum(liks)
 
 
 
@@ -95,6 +115,24 @@ def neg_loglik_t_ar(a: np.ndarray, y_t: np.ndarray) -> float:
     mu_t = conditional_mean(y_t, a[:-2])
 
     return -loglik_t(y_t[p:], mu_t[p:], sigma_2, nu)
+
+
+def multi_col_neg_loglik_t_ar(a: np.ndarray, y_t: np.ndarray) -> float:
+
+    '''
+    
+    Returns the sum of the log likelihood computed for each column
+    
+    '''
+
+    _, col = y_t.shape
+
+    liks = np.zeros(shape=col)
+
+    for i in range(0, col):
+        liks[0] = neg_loglik_t_ar(a, y_t[:,i])
+    
+    return np.sum(liks)
 
 
 

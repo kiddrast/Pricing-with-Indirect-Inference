@@ -6,7 +6,7 @@ from tqdm import trange
 import scipy.stats as stats
 from IPython.display import display
 
-from likelihoodFunctions import neg_loglik_normal_ar, neg_loglik_t_ar, neg_loglik_wald_ar
+from likelihoodFunctions import multi_col_neg_loglik_normal_ar, multi_col_neg_loglik_t_ar
 from scipy.optimize import minimize 
 
 
@@ -53,46 +53,6 @@ def generate_ar(steps: int, paths: int, a=np.ndarray, start=0, dist='normal', er
         print(f'{paths} different AR({p}) processes of {steps - p + 2} steps have been generated with increments following {dist} distribution') 
 
     return data
-
-
-
-def iterate_simulations(steps_list: list, paths: int,  a: np.ndarray, dist='normal', error_var=1, degree_f=None) -> dict:
-
-    '''
-    
-    Returns a dictionary with elements of steps_list as keys and and np.ndarray of size (steps x paths)
-    autoregressive processes. In other words iterates generate_ar() to many #steps
-
-    '''
-
-    simulations = {}
-
-    for steps in steps_list:
-        sim = generate_ar(steps=steps, paths=paths, a=a, dist=dist, error_var=error_var, degree_f=degree_f, disable_progress=True)
-        simulations[steps] = sim
-    
-    return simulations
-
-
-
-def iterate_fit_ols(simulations: dict, p: int, return_df=True) -> df | dict:
-
-    '''
-    
-    By default returns a pandas dataframe with the average coefficients fitted for every # steps (averaged over paths)
-    If return_df=False, it returns a dictionary containing the coefficients found for every # of steps, not averaged per path.
-    
-    '''
-
-    coef = {}
-
-    for steps in simulations:
-        coef[steps] = fit_ar_ols(data=simulations[steps], p=p)
-
-    if return_df:
-        return df({k: np.mean(v, axis=1).ravel() for k, v in coef.items()})
-    else:
-        return coef
 
 
 
@@ -162,7 +122,7 @@ def fit_ar_ols(data: np.ndarray, p: int) -> np.ndarray:
 
 
 
-def fit_ar_ML(y_t: np.ndarray, p: int, dist='normal', method='L-BFGS-B'):
+def fit_ar_ML(y_t: np.ndarray, p: int, dist='normal', method='L-BFGS-B', print_res=True):
 
     '''
     
@@ -179,16 +139,111 @@ def fit_ar_ML(y_t: np.ndarray, p: int, dist='normal', method='L-BFGS-B'):
 
         x0 = np.concatenate([[init_a0], init_coeff, [init_sigma_2]])
         bounds = [(None,None)] * (p+1) + [(0.01,None)] # No bounds for coeff + Bounds ( >0) for variance
-        res = minimize(fun=neg_loglik_normal_ar, x0=x0, args=(y_t,), method=method, bounds=bounds)
-    
+        res = minimize(fun=multi_col_neg_loglik_normal_ar, x0=x0, args=(y_t,), method=method, bounds=bounds)
+        # a_hat = res.x[:p+2]
+        # sigma_2_hat = res.x[-1]
+
     elif dist == 't':
 
         init_nu = 6.5
         x0 = np.concatenate([[init_a0], init_coeff, [init_sigma_2], [init_nu]])
         bounds = [(None,None)] * (p+1) + [(0.01,None)] + [(0.01,None)] # No bounds for coeff + Bounds ( >0) for variance and nu
-        res = minimize(fun=neg_loglik_t_ar, x0=x0, args=(y_t,), method=method, bounds=bounds)
+        res = minimize(fun=multi_col_neg_loglik_t_ar, x0=x0, args=(y_t,), method=method, bounds=bounds)
+        # a_hat = res.x[:p+2]
+        # sigma_2_hat = res.x[-2]
+        # nu_hat = res.x[-1]
+
+    if print_res: print(res)
     
-    return res
+    return res.x
+
+
+
+def iterate_simulations(steps_list: list, paths: int,  a: np.ndarray, dist='normal', error_var=1, degree_f=None) -> dict:
+
+    '''
+    
+    Returns a dictionary with elements of steps_list as keys and and np.ndarray of size (steps x paths)
+    autoregressive processes. In other words iterates generate_ar() to many #steps
+
+    '''
+
+    simulations = {}
+
+    for steps in steps_list:
+        sim = generate_ar(steps=steps, paths=paths, a=a, dist=dist, error_var=error_var, degree_f=degree_f, disable_progress=True)
+        simulations[steps] = sim
+    
+    return simulations
+
+
+
+def iterate_fit_ar_ols(simulations: dict, p: int, return_df=True) -> df | dict:
+
+    '''
+    
+    By default returns a pandas dataframe with the average coefficients fitted for every # steps (averaged over paths)
+    If return_df=False, it returns a dictionary containing the coefficients found for every # of steps, not averaged per path.
+    
+    '''
+
+    coef = {}
+
+    for steps in simulations:
+        coef[steps] = fit_ar_ols(data=simulations[steps], p=p)
+
+    if return_df:
+        return df({k: np.mean(v, axis=1).ravel() for k, v in coef.items()})
+    else:
+        return coef
+
+
+
+def iterate_fit_ar_ML(simulations: dict, p: int, dist: str, method='L-BFGS-B', return_df=True) -> df | dict:
+
+    '''
+    
+    By default returns a pandas dataframe with the average coefficients fitted for every # steps (averaged over paths)
+    If return_df=False, it returns a dictionary containing the coefficients found for every # of steps, not averaged per path.
+    
+    '''
+
+    coef = {}
+
+    for steps in simulations:
+        coef[steps] = fit_ar_ML(y_t=simulations[steps], p=p, dist=dist, method=method, print_res=False)
+
+    if return_df:
+        return df(coef)
+    else:
+        return coef
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -246,6 +301,5 @@ def plot_paths(data=None, size=(11,3),  title='AR processes'):
 ### test and debug
 
 if __name__ == '__main__':
-    data = generate_ar(steps=100000, paths=1, a=np.array([0.1, -0.5, 0.3, 0.4, -0.2]), start=0, dist='t', degree_f=7)
-
-    print(fit_ar_ML(y_t=data, p=4, dist='t'))
+    data = generate_ar(steps=10_000, paths=2, a=np.array([0.1, 0.4]), start=0, dist='t', degree_f=5)
+    print(fit_ar_ML(y_t=data, p=1, dist='t'))
