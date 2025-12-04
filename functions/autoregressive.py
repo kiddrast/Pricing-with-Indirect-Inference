@@ -105,7 +105,7 @@ def fit_ar_ols(data: np.ndarray, p: int) -> np.ndarray:
             
         X = np.hstack(cols)  # Populating X with y_t-1, y_t-2, ... , y_t-p
 
-        a_hat = np.linalg.inv(X.T @ X) @ (Y.T @ X).T
+        a_hat = np.linalg.inv(X.T @ X) @ (X.T @ Y)
 
         return a_hat 
 

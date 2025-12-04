@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 
 
 
-# TODO add const, 
-
 def generate_sigma(k, bounds):
 
     rng = np.random.default_rng(seed=42)
@@ -128,9 +126,22 @@ def generate_var(T: int, k: int, p: int, sigma: np.ndarray, A: np.ndarray, A_0= 
 
 
 
+def fit_var_ols(data, p) -> np.ndarray:
 
+    T, k = data.shape
 
+    Y = data[p:,:]
+    X = np.ones(shape=(T-p, 1+k*p))
 
+    for i in range(0,p):
+        X[:, 1+k*i : 1+k*(i+1)] = data[p-i-1 : T-i-1, :]
+
+    A_hat = np.linalg.inv(X.T @ X) @ (X.T @ Y)
+
+    c = A_hat[1,:]
+    A_hat = A_hat[1:].reshape(p,k,k).transpose(0, 2, 1)
+
+    return c , A_hat
 
 
 
@@ -138,10 +149,12 @@ def generate_var(T: int, k: int, p: int, sigma: np.ndarray, A: np.ndarray, A_0= 
 if __name__ == '__main__':
 
     k = 3
-    T = 100
-    p=4
+    T = 1_000_000
+    p=3
 
     A = generate_A_stationary(k, p, plot_eigs=True, diag_dominant=False, offdiag_scale=0.5)
     sigma = generate_sigma(k, bounds=(0.1, 1.0))
     data = generate_var(T, k, p, sigma, A)
+    a_hat = fit_var_ols(data, p)
 
+    
