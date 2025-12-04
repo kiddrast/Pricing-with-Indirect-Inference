@@ -244,33 +244,6 @@ def iterate_fit_ar_ML(simulations: dict, p: int, dist: str, method='L-BFGS-B', r
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 def get_residuals(data: np.ndarray, coefficients: np.ndarray, p: int, std_residuals = True) -> np.ndarray:
 
     '''
