@@ -61,7 +61,7 @@ def two_scales_volatility(K: int, log_prices = None, log_returns = None) -> np.a
 
 
 
-
+'''
 ### For testing and debugging
 if __name__ == "__main__":
 
@@ -72,6 +72,6 @@ if __name__ == "__main__":
     rv_all = realized_volatility(log_returns=data)
     tsrv = two_scales_volatility(log_returns=data)
 
-
+'''
 
 
