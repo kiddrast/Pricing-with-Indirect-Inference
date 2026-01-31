@@ -4,6 +4,17 @@ import matplotlib.pyplot as plt
 
 
 
+def add_microstructure_noise(price_paths: np.ndarray,
+                              eta: float,
+                              seed: int = 42):
+
+    rng = np.random.default_rng(seed)
+    noise = rng.normal(0, eta, size=price_paths.shape)
+
+    return price_paths + noise
+
+
+
 def generate_gbm(steps: int,
                  T: float, 
                  paths: int, 
