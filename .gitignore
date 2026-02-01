@@ -1,5 +1,4 @@
 venv_fundamentals/
 __pycache__/
 .vscode/
-
 test.py
